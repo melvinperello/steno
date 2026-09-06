@@ -78,7 +78,7 @@ def manage_ui(json_stream, initial_ui):
     if json_stream:
         yield None
     else:
-        with Live(initial_ui, refresh_per_second=4, transient=False) as live:
+        with Live(initial_ui, refresh_per_second=4, transient=True) as live:
             yield live
 
 def emit_json(file_name, duration, current, speed, elapsed, eta, latest_text, status):

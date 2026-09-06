@@ -69,7 +69,11 @@ def generate_vad_cache(wav_path: Path, progress_callback=None) -> Path:
     
     opts = ort.SessionOptions()
     opts.log_severity_level = 3
-    session = ort.InferenceSession(str(model_path), sess_options=opts, providers=providers)
+    
+    import warnings
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        session = ort.InferenceSession(str(model_path), sess_options=opts, providers=providers)
     
     _state = np.zeros((2, 1, 128), dtype=np.float32)
     _context = np.zeros((1, CONTEXT_SIZE), dtype=np.float32)
