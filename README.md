@@ -16,6 +16,7 @@ Steno achieves high accuracy and infinite file-length reliability by strictly de
 1. **Memory Safety**: We never load full audio arrays into RAM. Audio is streamed in 10-second chunks using `wave.setpos()`.
 2. **Context & Accuracy**: The Silero VAD model detects continuous speech and merges it into solid blocks up to 15 seconds long. This provides Whisper with perfect grammatical context for highly accurate inferences, avoiding the pitfalls of blind, word-by-word chunking.
 3. **Zero Hallucinations**: Because we only feed Whisper verified speech boundaries, it is never exposed to dead air or static, effectively eliminating the hallucination loops that commonly plague raw Whisper wrappers on long audio files.
+4. **Sequential VRAM Allocation**: Both the Silero VAD model and the Whisper transcription model are explicitly instantiated and destroyed *per-file*. This completely flushes the GPU's memory between phases and between files in a batch, guaranteeing maximum VRAM availability and completely eliminating the creeping memory leaks that cause C++ frameworks to crash on massive, multi-hour batch runs.
 
 ## Installation
 

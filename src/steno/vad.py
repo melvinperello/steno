@@ -64,9 +64,12 @@ def generate_vad_cache(wav_path: Path, progress_callback=None) -> Path:
         return vad_cache
 
     model_path = get_silero_model_path()
+    from .hardware import has_nvidia_gpu
+    providers = ["CUDAExecutionProvider", "CPUExecutionProvider"] if has_nvidia_gpu() else ["CPUExecutionProvider"]
+    
     opts = ort.SessionOptions()
     opts.log_severity_level = 3
-    session = ort.InferenceSession(str(model_path), sess_options=opts, providers=["CPUExecutionProvider"])
+    session = ort.InferenceSession(str(model_path), sess_options=opts, providers=providers)
     
     _state = np.zeros((2, 1, 128), dtype=np.float32)
     _context = np.zeros((1, CONTEXT_SIZE), dtype=np.float32)
