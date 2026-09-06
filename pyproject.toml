@@ -1,0 +1,21 @@
+[project]
+name = "steno"
+version = "0.1.0"
+description = "A single-purpose, rock-solid CLI workhorse for transcribing long-form audio with zero RAM bloat."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "click",
+    "faster-whisper",
+    "numpy",
+    "onnxruntime-gpu",
+    "rich",
+    "tqdm"
+]
+
+[project.scripts]
+steno = "steno.cli:cli"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
