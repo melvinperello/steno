@@ -214,9 +214,13 @@ def run_pipeline(audio_file: Path, model_size: str = "small", min_confidence: fl
                     shared_state["transcribed_audio_s"] += chunk_progress
                     shared_state["current_s"] = res['end']
                     last_res_end = res['end']
-                    
+
+                    elapsed = time.time() - start_wallclock
+                    speed = shared_state["transcribed_audio_s"] / elapsed if elapsed > 0 else 0.0
+                    eta = (duration - shared_state["current_s"]) / speed if speed > 0 else 0.0
+
                     l_text = f"[{format_time(res['start'])}] \"{res['text']}\""
-                    update_state(res['end'], stat="Transcribing...", l_text=l_text, live_ctx=None, seg_info=(current_seg_idx, total_segs))
+                    update_state(res['end'], speed=speed, elapsed=elapsed, eta=eta, stat="Transcribing...", l_text=l_text, live_ctx=None, seg_info=(current_seg_idx, total_segs))
                 
                 # Catch up any remaining silence at the end of the VAD block
                 remaining = seg_end - last_res_end
