@@ -1,4 +1,6 @@
+import json
 import os
+import sys
 # Suppress HuggingFace symlink warnings on Windows
 os.environ["HF_HUB_DISABLE_SYMLINKS_WARNING"] = "1"
 
@@ -61,7 +63,11 @@ def cli(path, model, min_confidence, clean, retranscribe, json_stream):
             if not json_stream: click.echo(f"\n[Steno] Interrupted by user. Progress for {f.name} was saved to its checkpoint.")
             break
         except Exception as e:
-            if not json_stream: click.echo(f"Error processing {f.name}: {e}")
+            if json_stream:
+                click.echo(json.dumps({"event": "error", "file": f.name, "error": str(e)}))
+            else:
+                click.echo(f"Error processing {f.name}: {e}")
+            sys.exit(1)
 
 if __name__ == "__main__":
     cli()

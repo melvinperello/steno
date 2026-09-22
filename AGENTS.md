@@ -33,7 +33,7 @@ When writing or modifying code in this repository, you MUST adhere to the follow
 - **Hardware**: We detect NVIDIA GPUs strictly via `nvidia-smi` subprocess polling to avoid loading massive CUDA contexts on CPU-only machines.
 
 ## Development & Iteration Methodology
-When collaborating on this project, we work in **Sprints**:
-1. **Sprint Planning**: Before starting work, always write out a plan in `docs/sprintX.md`.
-2. **Execution**: Implement the features in accordance with the strict architectural constraints above.
-3. **Sprint Retrospective**: *Every single time a sprint is completed*, the AI agent MUST generate a "Sprint Retrospective" covering the technical wins and the pitfalls/challenges overcome, and explicitly append it to the bottom of the active `docs/sprintX.md` file. This acts as a permanent ledger of lessons learned for future agents.
+When collaborating on this project:
+1. **Planning & Execution**: Implement features in accordance with the strict architectural constraints above.
+2. **Guidelines & Pitfalls**: Refer to `docs/guidelines.md` for architectural standards and `docs/pitfalls.md` for recorded edge cases and lessons learned.
+3. **Documentation & Ledger**: Keep `README.md` updated as the single source of truth for user-facing features, options, and architecture.

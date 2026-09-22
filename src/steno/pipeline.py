@@ -11,7 +11,7 @@ from .preprocess import prep_audio, get_audio_duration
 from .vad import generate_vad_cache
 from .checkpoint import CheckpointManager
 from .transcribe import Transcriber
-from .hardware import get_compute_config
+from .hardware import get_compute_config, has_nvidia_gpu
 from .output import generate_outputs
 
 def format_time(seconds: float) -> str:
@@ -58,9 +58,15 @@ def generate_ui(file_name, duration, current, speed, elapsed, eta, latest_text, 
     prog_line.append(f"] {percent:.1f}%{seg_str}")
     lines.append(prog_line)
     
+    # Hard-truncate the live text to guarantee it never touches the right edge of the terminal,
+    # as complex Unicode graphemes completely break terminal width calculations.
+    display_text = latest_text
+    if len(display_text) > 50:
+        display_text = display_text[:47] + "..."
+        
     lines.extend([
         Text(f"  Speed    : {speed:.1f}x real-time • Elapsed: {format_time(elapsed)} • ETA: {format_time(eta)}"),
-        Text(f"  Live     : 💬 {latest_text}")
+        Text(f"  Live     : 💬 {display_text}", no_wrap=True, overflow="ellipsis")
     ])
     
     return Panel(Group(*lines), title="[bold yellow]steno[/bold yellow]", title_align="left", border_style="bold yellow")
@@ -72,7 +78,7 @@ def manage_ui(json_stream, initial_ui):
     if json_stream:
         yield None
     else:
-        with Live(initial_ui, refresh_per_second=4, transient=False) as live:
+        with Live(initial_ui, refresh_per_second=4, transient=True) as live:
             yield live
 
 def emit_json(file_name, duration, current, speed, elapsed, eta, latest_text, status):
@@ -121,7 +127,8 @@ def run_pipeline(audio_file: Path, model_size: str = "small", min_confidence: fl
         
         # 2. VAD
         def vad_progress(p: float):
-            update_state(completed_s, stat=f"Running Silero VAD... {p*100:.1f}%", live_ctx=live)
+            hw_str = "CUDA" if has_nvidia_gpu() else "CPU"
+            update_state(completed_s, stat=f"Running Silero VAD ({hw_str})... {p*100:.1f}%", live_ctx=live)
             
         vad_cache_path = generate_vad_cache(wav_path, progress_callback=vad_progress)
         with open(vad_cache_path, 'r') as f:
@@ -207,9 +214,13 @@ def run_pipeline(audio_file: Path, model_size: str = "small", min_confidence: fl
                     shared_state["transcribed_audio_s"] += chunk_progress
                     shared_state["current_s"] = res['end']
                     last_res_end = res['end']
-                    
+
+                    elapsed = time.time() - start_wallclock
+                    speed = shared_state["transcribed_audio_s"] / elapsed if elapsed > 0 else 0.0
+                    eta = (duration - shared_state["current_s"]) / speed if speed > 0 else 0.0
+
                     l_text = f"[{format_time(res['start'])}] \"{res['text']}\""
-                    update_state(res['end'], stat="Transcribing...", l_text=l_text, live_ctx=None, seg_info=(current_seg_idx, total_segs))
+                    update_state(res['end'], speed=speed, elapsed=elapsed, eta=eta, stat="Transcribing...", l_text=l_text, live_ctx=None, seg_info=(current_seg_idx, total_segs))
                 
                 # Catch up any remaining silence at the end of the VAD block
                 remaining = seg_end - last_res_end
